@@ -1,0 +1,12 @@
+#__card{
+    display: none;
+}
+
+.content {
+    padding: 50px 0;
+}
+
+textarea#desc {
+    width: 100%;
+    min-height: 160px;
+}
