@@ -2,7 +2,8 @@
 
 class Database
 {
-    private $link;
+    /** @var PDO */
+    public $link;
 
 
     public function __construct()
@@ -10,7 +11,7 @@ class Database
         $this->connect();
     }
 
-    private function connect()
+    private function connect(): void
     {
         $config = require_once 'config.php';
 
@@ -21,15 +22,14 @@ class Database
         $password = $config['password'];
 
         $this->link = new PDO($dsn, $username, $password);
-
-        return $this;
     }
 
-    public function execute($sql)
+    public function execute($sql, $params = [])
     {
         $sth = $this->link->prepare($sql);
+        $sth->execute($params);
 
-        return $sth->execute();
+        return $sth;
     }
 
     public function query($sql)
@@ -45,41 +45,50 @@ class Database
         }
 
         return $result;
-
     }
 
-    public function listing()
-    {
-        $items = $this->query("SELECT * FROM `Items`");
 
-        return $items;
+    public function update($table, $params =[], $where = [])
+    {
+        $query = 'UPDATE `'.$table.'` SET ';
+        $setQuery = [];
+        $whereQuery = [];
+        $bindings = [];
+        foreach ($params as $key=>$value) {
+            $bindings[] = $value;
+            $setQuery[] = '`'.$key.'`=?';
+        }
+        foreach ($where as $key=>$value) {
+            $bindings[] = $value;
+            $whereQuery[] = '`'.$key.'`=?';
+        }
+
+        $query.=implode(', ', $setQuery);
+        if (!empty($whereQuery)) {
+            $query.=' WHERE '.implode(' AND ', $whereQuery);
+        }
+
+        $sth = $this->link->prepare($query);
+        $sth->execute($bindings);
+
+        return $sth->rowCount();
     }
 
-    public function create($name, $description)
+    public function all($query, $bindings = [])
     {
-        $sth = "insert into `items` (`name`, `description`) values (  ?,? )";
-        return $this->link->prepare($sth)->execute([$name, $description]);
+        $sth = $this->execute($query, $bindings);
 
+        return $sth->fetchAll();
     }
 
-    public function delete($id)
+    public function first($query, array $bindings = [])
     {
-        $sth = "delete from `items` where id = ?";
-        return $this->link->prepare($sth)->execute([$id]);
-    }
+        $sth = $this->execute($query, $bindings);
 
-    public function singleView($id)
-    {
-        $sth = $this->link->prepare("SELECT * FROM `items` where id=?");
-        $sth->execute([$id]);
         return $sth->fetch();
     }
 
-    public function update($name, $desc, $id)
-    {
-        $sth = "update `items` set `name` = ?, `description` = ?  where id = ?";
-        return $this->link->prepare($sth)->execute([$name, $desc, $id]);
-    }
+
 
 
 }

@@ -1,10 +1,12 @@
 <?php
 include 'functions.php';
+include 'RepositoryItems.php';
 $db = new Database();
+
+$repository = new RepositoryItems($db);
 
 function prepareViewData($path, $data = array())
 {
-    $content = '';
     ob_start();
     extract($data);
     include 'views/' . $path . '.php';
@@ -14,7 +16,7 @@ function prepareViewData($path, $data = array())
 }
 
 $data = prepareViewData('index/index', [
-    'items' => $db->listing(),
+    'items' => $repository->listing(),
 ]);
 extract($data);
 
